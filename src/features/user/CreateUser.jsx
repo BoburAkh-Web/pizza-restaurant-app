@@ -10,7 +10,8 @@ function CreateUser() {
   const navigate = useNavigate();
   function handleSubmit(e) {
     e.preventDefault();
-    dispatch(updateName(username));
+    if (!username.trim()) return;
+    dispatch(updateName(username.trim()));
     setUsername("");
     navigate("/menu");
   }
@@ -26,11 +27,11 @@ function CreateUser() {
         type="text"
         placeholder="Your full name"
         value={username}
-        className="input mb-8 w-full max-w-72 bg-white"
+        className="input mb-8 w-full max-w-72 bg-white font-semibold text-amber-500"
         onChange={(e) => setUsername(e.target.value)}
       />
 
-      {username !== "" && (
+      {username.trim() !== "" && (
         <div>
           <Button type="primary">Start ordering</Button>
         </div>

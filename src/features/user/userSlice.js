@@ -66,8 +66,28 @@ export const fetchAddress = createAsyncThunk(
 
 // export default userSlice.reducer;
 
+// The name is kept in localStorage (see store.js): every visitor types it once,
+// on their first visit, and is remembered after that.
+const USERNAME_KEY = "username";
+
+function loadUsername() {
+  try {
+    return localStorage.getItem(USERNAME_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function saveUsername(username) {
+  try {
+    localStorage.setItem(USERNAME_KEY, username);
+  } catch {
+    // storage blocked (e.g. private mode): the name just won't survive a reload
+  }
+}
+
 const initialState = {
-  username: "Bobur",
+  username: loadUsername(),
   status: "idle",
   position: {},
   address: "",

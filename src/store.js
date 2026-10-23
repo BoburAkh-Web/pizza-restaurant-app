@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import userReducer from "./features/user/userSlice";
+import userReducer, { saveUsername } from "./features/user/userSlice";
 import cartReducer from "./features/cart/cartSlice";
 import favoritesReducer, {
   saveFavoriteIds,
@@ -12,13 +12,20 @@ const store = configureStore({
   },
 });
 
-// Write favorites to localStorage whenever they change (a new array means they changed)
+// Write the username and favorites to localStorage whenever they change
+let { username: savedUsername } = store.getState().user;
 let savedFavoriteIds = store.getState().favorites.ids;
 store.subscribe(() => {
-  const { ids } = store.getState().favorites;
-  if (ids === savedFavoriteIds) return;
-  savedFavoriteIds = ids;
-  saveFavoriteIds(ids);
+  const { user, favorites } = store.getState();
+  if (user.username !== savedUsername) {
+    savedUsername = user.username;
+    saveUsername(user.username);
+  }
+  // a new array means the favorites changed
+  if (favorites.ids !== savedFavoriteIds) {
+    savedFavoriteIds = favorites.ids;
+    saveFavoriteIds(favorites.ids);
+  }
 });
 
 export default store;
