@@ -61,15 +61,12 @@ function Order() {
       </div>
 
       <ul className="dive-stone-200 divide-y border-t border-b">
-        {cart.map((item) => (
+        {/* the same pizza can appear twice (different sizes), so pizzaId alone is not a unique key */}
+        {cart.map((item, index) => (
           <OrderItem
             item={item}
-            key={item.pizzaId}
-            isLoadingIngredients={fetcher.state === "loading"}
-            ingredients={
-              fetcher?.data?.find((el) => el.id === item.pizzaId)
-                ?.ingredients ?? []
-            }
+            key={`${item.pizzaId}-${index}`}
+            menuPromise={fetcher.data?.menu}
           />
         ))}
       </ul>

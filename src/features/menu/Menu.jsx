@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Outlet, useLoaderData } from "react-router-dom";
+import { Suspense, useState } from "react";
+import { Await, Outlet, useLoaderData } from "react-router-dom";
 import { getMenu } from "../../services/apiRestaurant";
 import Button from "../../ui/Button";
 import MenuItem from "./MenuItem";
+import MenuSkeleton from "./MenuSkeleton";
 import { FILTERS } from "./pizzaFilters";
 
 const SORT_OPTIONS = [
@@ -28,7 +29,16 @@ function comparePrice(a, b, sortBy) {
 }
 
 function Menu() {
-  const menu = useLoaderData();
+  const { menu } = useLoaderData();
+
+  return (
+    <Suspense fallback={<MenuSkeleton />}>
+      <Await resolve={menu}>{(menu) => <MenuContent menu={menu} />}</Await>
+    </Suspense>
+  );
+}
+
+function MenuContent({ menu }) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recommended");
@@ -117,9 +127,10 @@ function Menu() {
   );
 }
 
-export async function loader() {
-  const menu = await getMenu();
-  return menu;
+// The promise is returned without await, so the page renders right away
+// with a skeleton, and <Await> fills it in when the menu arrives.
+export function loader() {
+  return { menu: getMenu() };
 }
 
 export default Menu;

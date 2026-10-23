@@ -8,6 +8,7 @@ import store from "../../store";
 import { formatCurrency } from "../../utils/helpers";
 import { useState } from "react";
 import { fetchAddress } from "../user/userSlice";
+import { toOrderItem } from "../menu/pizzaOptions";
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
   /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/.test(
@@ -137,7 +138,7 @@ export async function action({ request }) {
   const data = Object.fromEntries(formData);
   const order = {
     ...data,
-    cart: JSON.parse(data.cart),
+    cart: JSON.parse(data.cart).map(toOrderItem),
     priority: data.priority === "true",
   };
 

@@ -8,19 +8,36 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
+    // Items are identified by cartItemId (pizza + size + extras), not pizzaId,
+    // because the same pizza can be in the cart with different options.
     addItem(state, action) {
-      state.cart.push(action.payload);
+      const newItem = action.payload;
+      const item = state.cart.find(
+        (item) => item.cartItemId === newItem.cartItemId,
+      );
+      if (!item) {
+        state.cart.push(newItem);
+        return;
+      }
+      item.quantity += newItem.quantity;
+      item.totalPrice = item.quantity * item.unitPrice;
     },
     deleteItem(state, action) {
-      state.cart = state.cart.filter((item) => item.pizzaId !== action.payload);
+      state.cart = state.cart.filter(
+        (item) => item.cartItemId !== action.payload,
+      );
     },
     increaseItemQuant(state, action) {
-      const item = state.cart.find((item) => item.pizzaId === action.payload);
+      const item = state.cart.find(
+        (item) => item.cartItemId === action.payload,
+      );
       item.quantity++;
       item.totalPrice = item.quantity * item.unitPrice;
     },
     decreaseItemQuant(state, action) {
-      const item = state.cart.find((item) => item.pizzaId === action.payload);
+      const item = state.cart.find(
+        (item) => item.cartItemId === action.payload,
+      );
       item.quantity--;
       item.totalPrice = item.quantity * item.unitPrice;
       if (item.quantity === 0) cartSlice.caseReducers.deleteItem(state, action);
@@ -46,5 +63,11 @@ export const getTotalCartQuantity = (state) =>
 
 export const getTotalCartPrice = (state) =>
   state.cart.cart.reduce((sum, item) => sum + item.totalPrice, 0);
-export const getCurrentQuantityById = (id) => (state) =>
-  state.cart.cart.find((item) => item.pizzaId === id)?.quantity ?? 0;
+export const getQuantityByCartItemId = (cartItemId) => (state) =>
+  state.cart.cart.find((item) => item.cartItemId === cartItemId)?.quantity ?? 0;
+
+// All sizes and extras of one pizza together
+export const getPizzaQuantityInCart = (pizzaId) => (state) =>
+  state.cart.cart
+    .filter((item) => item.pizzaId === pizzaId)
+    .reduce((sum, item) => sum + item.quantity, 0);

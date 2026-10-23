@@ -1,7 +1,10 @@
+import { Suspense } from "react";
+import { Await } from "react-router-dom";
 import { formatCurrency } from "../../utils/helpers";
 
-function OrderItem({ item, isLoadingIngredients, ingredients }) {
-  const { quantity, name, totalPrice } = item;
+// menuPromise comes from fetcher.load("/menu"); the menu loader returns { menu: Promise }
+function OrderItem({ item, menuPromise }) {
+  const { pizzaId, quantity, name, totalPrice, addIngredients = [] } = item;
 
   return (
     <li className="py-3">
@@ -11,8 +14,23 @@ function OrderItem({ item, isLoadingIngredients, ingredients }) {
         </p>
         <p className="font-bold">{formatCurrency(totalPrice)}</p>
       </div>
+      {addIngredients.length > 0 && (
+        <p className="text-sm text-stone-600">+ {addIngredients.join(", ")}</p>
+      )}
       <p className="text-sm text-stone-500 capitalize italic">
-        {isLoadingIngredients ? "Loading..." : ingredients.join(", ")}
+        {menuPromise ? (
+          <Suspense fallback="Loading...">
+            <Await resolve={menuPromise}>
+              {(menu) =>
+                menu
+                  .find((pizza) => pizza.id === pizzaId)
+                  ?.ingredients.join(", ")
+              }
+            </Await>
+          </Suspense>
+        ) : (
+          "Loading..."
+        )}
       </p>
     </li>
   );

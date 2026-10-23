@@ -2,26 +2,29 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import Button from "../../ui/Button";
 import { formatCurrency } from "../../utils/helpers";
-import { addItem, getCurrentQuantityById } from "../cart/cartSlice";
+import {
+  addItem,
+  getPizzaQuantityInCart,
+  getQuantityByCartItemId,
+} from "../cart/cartSlice";
 import DeletePizza from "../cart/DeletePizza";
 import UpdateQuantity from "../cart/UpdateQuantity";
 import PizzaTags from "./PizzaTags";
+import { DEFAULT_SIZE, createCartItem, makeCartItemId } from "./pizzaOptions";
 
 function MenuItem({ pizza }) {
   const dispatch = useDispatch();
   const { id, name, unitPrice, ingredients, soldOut, imageUrl } = pizza;
-  const currentQuantity = useSelector(getCurrentQuantityById(id));
+  // The card works with the plain version (Medium, no extras);
+  // other sizes and extras are chosen in the details modal.
+  const cartItemId = makeCartItemId(id, DEFAULT_SIZE);
+  const currentQuantity = useSelector(getQuantityByCartItemId(cartItemId));
+  const customizedQuantity =
+    useSelector(getPizzaQuantityInCart(id)) - currentQuantity;
   const isInCart = currentQuantity > 0;
   console.log(currentQuantity);
   function handleAddToCart() {
-    const newItem = {
-      pizzaId: id,
-      name,
-      unitPrice,
-      quantity: 1,
-      totalPrice: unitPrice * 1,
-    };
-    dispatch(addItem(newItem));
+    dispatch(addItem(createCartItem(pizza)));
   }
   return (
     <li
@@ -65,6 +68,11 @@ function MenuItem({ pizza }) {
             </li>
           ))}
         </ul>
+        {customizedQuantity > 0 && (
+          <p className="mt-2 text-xs text-stone-500">
+            +{customizedQuantity} customized in cart
+          </p>
+        )}
         <div className="relative z-10 mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
           <p
             className={`font-semibold ${soldOut ? "text-stone-400" : "text-stone-800"}`}
@@ -72,9 +80,12 @@ function MenuItem({ pizza }) {
             {formatCurrency(unitPrice)}
           </p>
           {isInCart && (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <UpdateQuantity pizzaId={id} currentQuantity={currentQuantity} />
-              <DeletePizza pizzaId={id} />
+            <div className="motion-safe:animate-pop-in flex items-center gap-2 sm:gap-3">
+              <UpdateQuantity
+                cartItemId={cartItemId}
+                currentQuantity={currentQuantity}
+              />
+              <DeletePizza cartItemId={cartItemId} />
             </div>
           )}
           {!soldOut && !isInCart && (
