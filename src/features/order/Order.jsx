@@ -32,9 +32,9 @@ function Order() {
   return (
     <div className="space-y-8 px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">Order: #{id}</h2>
-          <h2 className="text-xl font-semibold">{status}</h2>
+        <div className="flex flex-wrap items-center gap-x-2">
+          <h2 className="text-lg font-semibold sm:text-xl">Order: #{id}</h2>
+          <h2 className="text-lg font-semibold sm:text-xl">{status}</h2>
         </div>
 
         <div className="space-x-2">
@@ -49,18 +49,18 @@ function Order() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-stone-200 px-6 py-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-stone-200 px-4 py-5 sm:px-6">
         <p className="font-medium">
           {deliveryIn >= 0
             ? `Only ${calcMinutesLeft(estimatedDelivery)} minutes left 😃`
             : "Order should have arrived"}
         </p>
-        <p className="text-m text-stone-500">
+        <p className="text-sm text-stone-500">
           (Estimated delivery: {formatDate(estimatedDelivery)})
         </p>
       </div>
 
-      <ul className="dive-stone-200 divide-y border-t border-b">
+      <ul className="divide-y divide-stone-200 border-t border-b border-stone-200">
         {/* the same pizza can appear twice (different sizes), so pizzaId alone is not a unique key */}
         {cart.map((item, index) => (
           <OrderItem
@@ -71,7 +71,7 @@ function Order() {
         ))}
       </ul>
 
-      <div className="space-y-2 bg-stone-200 px-6 py-5">
+      <div className="space-y-2 rounded-2xl bg-stone-200 px-4 py-5 sm:px-6">
         <p className="text-sm font-medium text-stone-600">
           Price pizza: {formatCurrency(orderPrice)}
         </p>

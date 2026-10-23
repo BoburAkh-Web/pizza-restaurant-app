@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
   Navigate,
   useAsyncValue,
@@ -9,7 +9,9 @@ import {
 } from "react-router-dom";
 import Button from "../../ui/Button";
 import { formatCurrency } from "../../utils/helpers";
-import { addItem, getPizzaQuantityInCart } from "../cart/cartSlice";
+import { getPizzaQuantityInCart } from "../cart/cartSlice";
+import { useAddToCart } from "../cart/useAddToCart";
+import FavoriteButton from "../favorites/FavoriteButton";
 import PizzaTags from "./PizzaTags";
 import {
   DEFAULT_SIZE,
@@ -25,6 +27,8 @@ const headingStyle =
 // The real radio/checkbox inputs are visually hidden; the label is styled from their state
 const optionStyle =
   "cursor-pointer ring-1 ring-stone-200 transition hover:bg-stone-50 has-checked:bg-yellow-100 has-checked:ring-2 has-checked:ring-yellow-400 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-stone-800";
+// must match duration-200 in the closing classes of the dialog
+const CLOSE_ANIMATION_MS = 200;
 
 function PizzaDetails() {
   const { pizzaId } = useParams();
@@ -32,13 +36,19 @@ function PizzaDetails() {
   const menu = useAsyncValue();
   const pizza = menu.find((pizza) => pizza.id === Number(pizzaId));
   const quantityInCart = useSelector(getPizzaQuantityInCart(Number(pizzaId)));
-  const [sizeId, setSizeId] = useState(DEFAULT_SIZE);
+  const location = useLocation();
+  // the menu card passes its selected size in the link state
+  const cardSize = location.state?.sizeId;
+  const [sizeId, setSizeId] = useState(
+    SIZES.some((size) => size.id === cardSize) ? cardSize : DEFAULT_SIZE,
+  );
   const [extraIds, setExtraIds] = useState([]);
   const [quantity, setQuantity] = useState(1);
+  const [isClosing, setIsClosing] = useState(false);
+  const closeTimerRef = useRef(null);
   const dialogRef = useRef(null);
-  const dispatch = useDispatch();
+  const addToCart = useAddToCart();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -56,8 +66,37 @@ function PizzaDetails() {
     else navigate("/menu", { replace: true });
   }
 
+  // Plays the exit transition first, then really closes the dialog (which fires onClose -> handleClose).
+  // If the user leaves with the Back button meanwhile, the dialog is already gone, hence the ?.
   function closeDialog() {
-    dialogRef.current.close();
+    if (closeTimerRef.current) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduceMotion) {
+      dialogRef.current.close();
+      return;
+    }
+    setIsClosing(true);
+    closeTimerRef.current = setTimeout(
+      () => dialogRef.current?.close(),
+      CLOSE_ANIMATION_MS,
+    );
+  }
+
+  // Esc would close the dialog instantly; run it through closeDialog to animate it.
+  // Catch it on keydown: Chrome ignores preventDefault() on "cancel" if the user
+  // hasn't clicked inside the dialog yet. onCancel still covers other close
+  // requests (e.g. the Android back gesture).
+  function handleKeyDown(e) {
+    if (e.key !== "Escape") return;
+    e.preventDefault();
+    closeDialog();
+  }
+
+  function handleCancel(e) {
+    e.preventDefault();
+    closeDialog();
   }
 
   function handleBackdropClick(e) {
@@ -73,7 +112,7 @@ function PizzaDetails() {
   }
 
   function handleAddToCart() {
-    dispatch(addItem(createCartItem(pizza, { sizeId, extraIds, quantity })));
+    addToCart(createCartItem(pizza, { sizeId, extraIds, quantity }));
     closeDialog();
   }
 
@@ -81,14 +120,20 @@ function PizzaDetails() {
     <dialog
       ref={dialogRef}
       onClose={handleClose}
+      onCancel={handleCancel}
+      onKeyDown={handleKeyDown}
       onClick={handleBackdropClick}
-      className="mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-3xl bg-white text-stone-700 shadow-xl transition duration-300 backdrop:bg-stone-900/50 backdrop:backdrop-blur-sm backdrop:transition backdrop:duration-300 motion-reduce:transition-none sm:m-auto sm:max-w-xl sm:rounded-3xl starting:translate-y-8 starting:opacity-0 starting:backdrop:opacity-0"
+      className={`mt-auto max-h-[90dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-3xl bg-white text-stone-700 shadow-xl transition backdrop:bg-stone-900/50 backdrop:backdrop-blur-sm backdrop:transition motion-reduce:transition-none sm:m-auto sm:max-w-xl sm:rounded-3xl starting:translate-y-8 starting:opacity-0 starting:backdrop:opacity-0 ${
+        isClosing
+          ? "translate-y-8 opacity-0 duration-200 backdrop:opacity-0 backdrop:duration-200"
+          : "duration-300 backdrop:duration-300"
+      }`}
     >
       <div className="relative p-5 sm:p-6">
         <button
           onClick={closeDialog}
           aria-label="Close"
-          className="absolute top-3 right-3 flex size-9 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition hover:bg-stone-200 hover:text-stone-800 focus:ring focus:ring-yellow-400 focus:outline-none"
+          className="absolute top-3 right-3 flex size-9 cursor-pointer items-center justify-center rounded-full bg-stone-100 text-stone-500 transition hover:bg-stone-200 hover:text-stone-800 focus:outline-none focus-visible:ring focus-visible:ring-yellow-400"
         >
           &#10005;
         </button>
@@ -105,6 +150,11 @@ function PizzaDetails() {
                 Sold out
               </span>
             )}
+            <FavoriteButton
+              pizzaId={pizza.id}
+              pizzaName={name}
+              className="absolute top-2 right-2 size-8 sm:size-9"
+            />
           </div>
 
           <div className="min-w-0 grow">

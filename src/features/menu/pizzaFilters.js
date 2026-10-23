@@ -23,3 +23,9 @@ export const FILTERS = [
   { value: "vegetarian", label: "Vegetarian", test: isVegetarian },
   { value: "spicy", label: "Spicy", test: isSpicy },
 ];
+
+export const SORT_OPTIONS = [
+  { value: "recommended", label: "Recommended" },
+  { value: "price-asc", label: "Lowest price" },
+  { value: "price-desc", label: "Highest price" },
+];

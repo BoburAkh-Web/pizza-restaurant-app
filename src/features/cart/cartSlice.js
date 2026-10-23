@@ -45,6 +45,16 @@ const cartSlice = createSlice({
     clearItem(state) {
       state.cart = [];
     },
+    // Reverts an addItem (the toast's Undo button): takes the added quantity back
+    undoAddItem(state, action) {
+      const { cartItemId, quantity } = action.payload;
+      const item = state.cart.find((item) => item.cartItemId === cartItemId);
+      if (!item) return;
+      item.quantity -= quantity;
+      item.totalPrice = item.quantity * item.unitPrice;
+      if (item.quantity <= 0)
+        cartSlice.caseReducers.deleteItem(state, { payload: cartItemId });
+    },
   },
 });
 
@@ -54,6 +64,7 @@ export const {
   increaseItemQuant,
   decreaseItemQuant,
   clearItem,
+  undoAddItem,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

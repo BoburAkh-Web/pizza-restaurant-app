@@ -8,8 +8,8 @@ function CartOverview() {
   const totalCartPrice = useSelector(getTotalCartPrice);
   if (!totalCartPrice || !totalCartQuantity) return;
   return (
-    <div className="motion-safe:animate-slide-up flex items-center justify-between bg-stone-800 px-4 py-3 text-stone-200 uppercase">
-      <p className="flex items-center gap-3 font-semibold text-stone-300">
+    <div className="motion-safe:animate-slide-up flex items-center justify-between gap-3 bg-stone-800 px-4 py-3 text-sm text-stone-200 uppercase sm:px-6 sm:text-base">
+      <p className="flex items-center gap-2 font-semibold text-stone-300 sm:gap-3">
         {/* a new key remounts the badge, which replays the bump animation */}
         <span
           key={totalCartQuantity}
@@ -20,7 +20,9 @@ function CartOverview() {
         <span>{totalCartQuantity === 1 ? "pizza" : "pizzas"}</span>
         <span>{formatCurrency(totalCartPrice)}</span>
       </p>
-      <Link to="/cart">Open cart &rarr;</Link>
+      <Link to="/cart" className="shrink-0">
+        Open cart &rarr;
+      </Link>
     </div>
   );
 }

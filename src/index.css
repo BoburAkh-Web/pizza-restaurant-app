@@ -2,9 +2,14 @@
 @theme {
   --font-sans: "Roboto Mono", monospace;
 
+  /* wide enough for the orders panel in the empty space left of the menu */
+  --breakpoint-wide: 84rem;
+
   --animate-bump: bump 300ms ease-out;
   --animate-pop-in: pop-in 200ms ease-out;
   --animate-slide-up: slide-up 300ms ease-out;
+  --animate-hero-zoom: hero-zoom 20s ease-out both;
+  --animate-fade-up: fade-up 800ms ease-out both;
 
   @keyframes bump {
     40% {
@@ -22,11 +27,24 @@
       transform: translateY(100%);
     }
   }
+  /* slow "Ken Burns" zoom-out of the home page photo */
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.12);
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
 }
 
 @layer components {
   .input {
-    @apply rounded-full border-2 border-stone-200 px-4 py-2 text-sm transition-all duration-300 placeholder:text-stone-400 focus:ring focus:ring-yellow-400 focus:outline-none md:px-6 md:py-3;
+    /* text-base on phones: iOS zooms into inputs with a font smaller than 16px */
+    @apply rounded-full border-2 border-stone-200 px-4 py-2 text-base transition-all duration-300 placeholder:text-stone-400 focus:ring focus:ring-yellow-400 focus:outline-none sm:text-sm md:px-6 md:py-3;
   }
   /* https://dev.to/afif/i-made-100-css-loaders-for-your-next-project-4eje */
   .loader {

@@ -1,34 +1,45 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import Button from "../../ui/Button";
 import { formatCurrency } from "../../utils/helpers";
 import {
-  addItem,
   getPizzaQuantityInCart,
   getQuantityByCartItemId,
 } from "../cart/cartSlice";
 import DeletePizza from "../cart/DeletePizza";
 import UpdateQuantity from "../cart/UpdateQuantity";
+import { useAddToCart } from "../cart/useAddToCart";
+import FavoriteButton from "../favorites/FavoriteButton";
 import PizzaTags from "./PizzaTags";
-import { DEFAULT_SIZE, createCartItem, makeCartItemId } from "./pizzaOptions";
+import {
+  DEFAULT_SIZE,
+  SIZES,
+  calcUnitPrice,
+  createCartItem,
+  makeCartItemId,
+} from "./pizzaOptions";
 
 function MenuItem({ pizza }) {
-  const dispatch = useDispatch();
+  const addToCart = useAddToCart();
   const { id, name, unitPrice, ingredients, soldOut, imageUrl } = pizza;
-  // The card works with the plain version (Medium, no extras);
-  // other sizes and extras are chosen in the details modal.
-  const cartItemId = makeCartItemId(id, DEFAULT_SIZE);
+  // The card works with the chosen size without extras;
+  // extras are added in the details modal.
+  const [sizeId, setSizeId] = useState(DEFAULT_SIZE);
+  const cartItemId = makeCartItemId(id, sizeId);
   const currentQuantity = useSelector(getQuantityByCartItemId(cartItemId));
-  const customizedQuantity =
+  const otherQuantity =
     useSelector(getPizzaQuantityInCart(id)) - currentQuantity;
   const isInCart = currentQuantity > 0;
   console.log(currentQuantity);
   function handleAddToCart() {
-    dispatch(addItem(createCartItem(pizza)));
+    addToCart(createCartItem(pizza, { sizeId }));
   }
   return (
+    // Phones: a grid - image and name side by side, the controls below them at full width.
+    // From sm up: a vertical card (flex-col).
     <li
-      className={`group relative flex gap-4 overflow-hidden rounded-2xl bg-white p-3 shadow-sm ring-1 ring-stone-200 transition duration-300 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-yellow-400 sm:flex-col sm:gap-3 ${
+      className={`group relative grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-3 overflow-hidden rounded-2xl bg-white p-3 shadow-sm ring-1 ring-stone-200 transition duration-300 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-yellow-400 sm:flex sm:flex-col sm:gap-3 ${
         soldOut ? "" : "hover:shadow-md motion-safe:hover:-translate-y-0.5"
       }`}
     >
@@ -46,12 +57,19 @@ function MenuItem({ pizza }) {
             Sold out
           </span>
         )}
+        {/* z-10 keeps it clickable above the card's stretched link */}
+        <FavoriteButton
+          pizzaId={id}
+          pizzaName={name}
+          className="absolute top-1.5 right-1.5 z-10 size-8 sm:top-2 sm:right-2 sm:size-9"
+        />
       </div>
-      <div className="flex grow flex-col">
+      <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {/* after:inset-0 stretches the link over the whole card */}
           <Link
             to={`/menu/${id}`}
+            state={{ sizeId }}
             className="font-bold text-stone-800 after:absolute after:inset-0 focus:outline-none"
           >
             {name}
@@ -68,16 +86,53 @@ function MenuItem({ pizza }) {
             </li>
           ))}
         </ul>
-        {customizedQuantity > 0 && (
-          <p className="mt-2 text-xs text-stone-500">
-            +{customizedQuantity} customized in cart
-          </p>
+      </div>
+      <div className="col-span-2 flex grow flex-col">
+        {!soldOut && (
+          <div className="relative z-10">
+            {/* real radio inputs (visually hidden), so arrow keys work too */}
+            <fieldset className="flex w-full rounded-full bg-stone-100 p-0.5">
+              <legend className="sr-only">Size of {name}</legend>
+              {SIZES.map((size) => (
+                <label
+                  key={size.id}
+                  title={size.detail}
+                  className="flex-1 cursor-pointer rounded-full px-2 py-1.5 text-center text-xs font-semibold text-stone-500 transition hover:text-stone-800 has-checked:bg-white has-checked:text-stone-800 has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-stone-800"
+                >
+                  <input
+                    type="radio"
+                    name={`size-${id}`}
+                    value={size.id}
+                    checked={sizeId === size.id}
+                    onChange={() => setSizeId(size.id)}
+                    className="sr-only"
+                  />
+                  {size.label}
+                </label>
+              ))}
+            </fieldset>
+            <p className="mt-1.5 text-xs text-stone-500">
+              <Link
+                to={`/menu/${id}`}
+                state={{ sizeId }}
+                className="font-medium underline-offset-2 hover:text-stone-800 hover:underline"
+              >
+                + Add extras
+              </Link>
+              {otherQuantity > 0 && (
+                <span className="whitespace-nowrap">
+                  {" "}
+                  &middot; {otherQuantity} more in cart
+                </span>
+              )}
+            </p>
+          </div>
         )}
         <div className="relative z-10 mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
           <p
             className={`font-semibold ${soldOut ? "text-stone-400" : "text-stone-800"}`}
           >
-            {formatCurrency(unitPrice)}
+            {formatCurrency(calcUnitPrice(unitPrice, sizeId, []))}
           </p>
           {isInCart && (
             <div className="motion-safe:animate-pop-in flex items-center gap-2 sm:gap-3">
